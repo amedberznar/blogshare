@@ -197,7 +197,29 @@ async function createBlog(title, author, category, content) {
   }
 
   try {
-    const excerpt = content.substring(0, 150) + '...';
+    // Create smart excerpt that doesn't break markdown image URLs
+    let excerpt = content;
+
+    // If content is longer than 150 chars, create excerpt carefully
+    if (content.length > 150) {
+      // Check if there's an image in the first 150 chars
+      const firstPart = content.substring(0, 150);
+      const imageStartIndex = firstPart.lastIndexOf('![');
+
+      if (imageStartIndex !== -1) {
+        // There's a partial image markdown, find where it ends in full content
+        const imageEndIndex = content.indexOf(')', imageStartIndex);
+        if (imageEndIndex !== -1 && imageEndIndex > 150) {
+          // Include the complete image URL
+          excerpt = content.substring(0, imageEndIndex + 1) + '\n...';
+        } else {
+          excerpt = content.substring(0, 150) + '...';
+        }
+      } else {
+        // No image in first part, safe to truncate
+        excerpt = content.substring(0, 150) + '...';
+      }
+    }
 
     const blogData = {
       title: title,
