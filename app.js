@@ -508,6 +508,121 @@ async function deleteFakeBlogs() {
 // Make function available globally for console access
 window.deleteFakeBlogs = deleteFakeBlogs;
 
+// Migrate old blogs to add author photos (uses current user's photo for their blogs)
+async function addPhotosToMyOldBlogs() {
+  if (!currentUser) {
+    alert('Please sign in first!');
+    return;
+  }
+
+  try {
+    console.log('📸 Adding your photo to your old blogs...');
+
+    // Get all blogs by current user
+    const blogsQuery = query(
+      collection(db, 'blogs'),
+      where('authorId', '==', currentUser.uid)
+    );
+    const blogsSnapshot = await getDocs(blogsQuery);
+
+    let updatedCount = 0;
+    const updatePromises = [];
+
+    blogsSnapshot.forEach((blogDoc) => {
+      const blog = blogDoc.data();
+
+      // Only update if authorPhoto is missing or empty
+      if (!blog.authorPhoto && currentUser.photoURL) {
+        console.log(`Adding photo to blog: "${blog.title}"`);
+        updatePromises.push(
+          updateDoc(doc(db, 'blogs', blogDoc.id), {
+            authorPhoto: currentUser.photoURL
+          })
+        );
+        updatedCount++;
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`✅ Migration complete! Updated ${updatedCount} of your blogs`);
+
+    // Reload blogs to show the changes
+    await loadBlogs();
+
+    alert(`Successfully added your photo to ${updatedCount} old blogs!`);
+  } catch (error) {
+    console.error('❌ Error migrating blogs:', error);
+    alert('Error adding photos to old blogs: ' + error.message);
+  }
+}
+
+// Migrate ALL old blogs to add author photos (admin function)
+async function addPhotosToAllOldBlogs() {
+  try {
+    console.log('📸 Starting migration to add author photos to ALL old blogs...');
+
+    // Get all blogs
+    const blogsQuery = query(collection(db, 'blogs'));
+    const blogsSnapshot = await getDocs(blogsQuery);
+
+    // Get all users
+    const usersQuery = query(collection(db, 'users'));
+    const usersSnapshot = await getDocs(usersQuery);
+
+    // Create a map of userId -> photoURL
+    const userPhotos = {};
+    usersSnapshot.forEach((userDoc) => {
+      const userData = userDoc.data();
+      if (userData.uid && userData.photoURL) {
+        userPhotos[userData.uid] = userData.photoURL;
+      }
+    });
+
+    console.log(`Found ${Object.keys(userPhotos).length} users with photos`);
+
+    let updatedCount = 0;
+    const updatePromises = [];
+
+    blogsSnapshot.forEach((blogDoc) => {
+      const blog = blogDoc.data();
+
+      // Only update if authorPhoto is missing or empty
+      if (!blog.authorPhoto && blog.authorId) {
+        const photoURL = userPhotos[blog.authorId];
+
+        if (photoURL) {
+          console.log(`Adding photo to blog: "${blog.title}" by ${blog.author}`);
+          updatePromises.push(
+            updateDoc(doc(db, 'blogs', blogDoc.id), {
+              authorPhoto: photoURL
+            })
+          );
+          updatedCount++;
+        } else {
+          console.log(`No photo found for user ${blog.authorId} (${blog.author})`);
+        }
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`✅ Migration complete! Updated ${updatedCount} blogs with author photos`);
+
+    // Reload blogs to show the changes
+    await loadBlogs();
+
+    alert(`Successfully added photos to ${updatedCount} old blogs!`);
+  } catch (error) {
+    console.error('❌ Error migrating blogs:', error);
+    alert('Error adding photos to old blogs: ' + error.message);
+  }
+}
+
+// Make migration functions available globally
+window.addPhotosToMyOldBlogs = addPhotosToMyOldBlogs;
+window.addPhotosToAllOldBlogs = addPhotosToAllOldBlogs;
+
 // Utility functions
 function formatDate(timestamp) {
   if (!timestamp) return 'Recently';
