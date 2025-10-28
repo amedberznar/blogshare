@@ -515,9 +515,13 @@ function renderBlogContent(content) {
   let sanitized = escapeHtml(content);
 
   // Convert markdown images: ![alt](url) to <img> tags
+  // Added loading="lazy" for better mobile performance
+  // Added onerror handler to help debug image loading issues
   sanitized = sanitized.replace(
     /!\[([^\]]*)\]\(([^\)]+)\)/g,
-    '<img src="$2" alt="$1" style="max-width: 100%; height: auto; margin: 1rem 0; border-radius: 8px;">'
+    (match, alt, url) => {
+      return `<img src="${url}" alt="${alt}" loading="lazy" crossorigin="anonymous" style="max-width: 100%; height: auto; margin: 1rem 0; border-radius: 8px; display: block;" onerror="console.error('Failed to load image:', '${url}'); this.style.border='2px solid #fcc'; this.style.padding='1rem'; this.alt='⚠️ Image failed to load: ${url}';">`;
+    }
   );
 
   // Convert line breaks to <br> for better formatting
