@@ -439,6 +439,43 @@ function updateStats() {
   }
 }
 
+// Clean up fake/sample blogs (those with @example.com emails)
+async function deleteFakeBlogs() {
+  try {
+    console.log('🧹 Starting cleanup of fake blogs...');
+
+    const blogsQuery = query(collection(db, 'blogs'));
+    const querySnapshot = await getDocs(blogsQuery);
+
+    let deletedCount = 0;
+    const deletePromises = [];
+
+    querySnapshot.forEach((docSnapshot) => {
+      const blog = docSnapshot.data();
+      if (blog.authorEmail && blog.authorEmail.endsWith('@example.com')) {
+        console.log(`Deleting fake blog: "${blog.title}" by ${blog.author}`);
+        deletePromises.push(deleteDoc(doc(db, 'blogs', docSnapshot.id)));
+        deletedCount++;
+      }
+    });
+
+    await Promise.all(deletePromises);
+
+    console.log(`✅ Deleted ${deletedCount} fake blogs`);
+
+    // Reload blogs to refresh the display
+    await loadBlogs();
+
+    alert(`Successfully deleted ${deletedCount} fake/sample blogs!`);
+  } catch (error) {
+    console.error('❌ Error deleting fake blogs:', error);
+    alert('Error deleting blogs: ' + error.message);
+  }
+}
+
+// Make function available globally for console access
+window.deleteFakeBlogs = deleteFakeBlogs;
+
 // Utility functions
 function formatDate(timestamp) {
   if (!timestamp) return 'Recently';
