@@ -176,13 +176,7 @@ async function loadBlogs() {
       });
     });
 
-    // If no blogs exist, seed with sample data
-    if (blogs.length === 0) {
-      await seedSampleBlogs();
-      await loadBlogs(); // Reload after seeding
-      return;
-    }
-
+    // Display blogs (even if empty - no more sample data!)
     displayBlogs(currentFilter);
     displayTrendingBlogs();
     updateStats();
@@ -306,61 +300,7 @@ async function incrementUserPostCount(userId) {
   }
 }
 
-// Seed sample blogs (only if database is empty)
-async function seedSampleBlogs() {
-  const sampleBlogs = [
-    {
-      title: "Getting Started with Web Development in 2025",
-      author: "Sarah Johnson",
-      authorId: "sample1",
-      authorEmail: "sarah@example.com",
-      category: "Technology",
-      content: "Web development is an exciting field that combines creativity with technical skills. Whether you're building your first website or developing complex web applications, understanding the fundamentals is crucial.\n\nHTML, CSS, and JavaScript form the foundation of web development. HTML provides structure, CSS handles styling, and JavaScript adds interactivity. Together, these three technologies enable you to create engaging and functional websites.\n\nStarting your journey in web development can seem overwhelming, but breaking it down into manageable steps makes it accessible to everyone. Begin with HTML and CSS, then gradually incorporate JavaScript as you become more comfortable.\n\nThe web development landscape in 2025 offers incredible frameworks and tools like React, Vue, and Next.js that make building modern applications faster and more enjoyable.",
-      excerpt: "Web development is an exciting field that combines creativity with technical skills. Whether you're building your first website...",
-      views: 1247,
-      likes: 89,
-      shares: 34,
-      comments: 0,
-      createdAt: serverTimestamp()
-    },
-    {
-      title: "10 Must-Visit Destinations in 2025",
-      author: "Michael Chen",
-      authorId: "sample2",
-      authorEmail: "michael@example.com",
-      category: "Travel",
-      content: "Travel opens up new perspectives and creates unforgettable memories. As we navigate through 2025, there are incredible destinations waiting to be explored.\n\nFrom the historic streets of Rome to the pristine beaches of Bali, each destination offers unique experiences. Whether you're seeking adventure, relaxation, or cultural immersion, the world has something for everyone.\n\nPlanning your next trip? Consider factors like weather, local festivals, and seasonal attractions. Traveling during shoulder seasons often provides the best balance of good weather and fewer crowds.\n\nSome top picks include Iceland for the Northern Lights, Japan for cherry blossom season, Peru for Machu Picchu, and Morocco for vibrant markets and desert adventures.",
-      excerpt: "Travel opens up new perspectives and creates unforgettable memories. As we navigate through 2025, there are incredible destinations...",
-      views: 2103,
-      likes: 156,
-      shares: 78,
-      comments: 0,
-      createdAt: serverTimestamp()
-    },
-    {
-      title: "The Art of Mindful Living",
-      author: "Emma Williams",
-      authorId: "sample3",
-      authorEmail: "emma@example.com",
-      category: "Lifestyle",
-      content: "In our fast-paced world, mindfulness has become more important than ever. Taking time to be present and aware can significantly improve our quality of life.\n\nMindfulness isn't just about meditation; it's about bringing awareness to every aspect of your daily routine. From eating meals without distractions to truly listening during conversations, small changes can make a big difference.\n\nStart with just five minutes a day. Find a quiet space, focus on your breath, and observe your thoughts without judgment. As you practice regularly, you'll notice increased clarity, reduced stress, and greater appreciation for life's simple moments.\n\nIncorporate mindfulness into daily activities: mindful walking, eating, working, and even cleaning can become meditative practices.",
-      excerpt: "In our fast-paced world, mindfulness has become more important than ever. Taking time to be present and aware can significantly...",
-      views: 1876,
-      likes: 134,
-      shares: 56,
-      comments: 0,
-      createdAt: serverTimestamp()
-    }
-  ];
-
-  console.log('Seeding sample blogs...');
-
-  for (const blog of sampleBlogs) {
-    await addDoc(collection(db, 'blogs'), blog);
-  }
-
-  console.log('Sample blogs seeded successfully!');
-}
+// Sample blog seeding function removed - use real user-generated content only
 
 // ============================================================================
 // UI FUNCTIONS
@@ -458,7 +398,7 @@ async function openBlogDetails(blogId) {
       <span>❤ ${formatNumber(blog.likes)} likes</span>
       <span>📤 ${formatNumber(blog.shares)} shares</span>
     </div>
-    <div class="blog-content">${escapeHtml(blog.content)}</div>
+    <div class="blog-content">${renderBlogContent(blog.content)}</div>
   `;
 
   // Update like count
@@ -528,6 +468,25 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Render blog content with images (convert markdown images to HTML)
+function renderBlogContent(content) {
+  if (!content) return '';
+
+  // Escape HTML first for security
+  let sanitized = escapeHtml(content);
+
+  // Convert markdown images: ![alt](url) to <img> tags
+  sanitized = sanitized.replace(
+    /!\[([^\]]*)\]\(([^\)]+)\)/g,
+    '<img src="$2" alt="$1" style="max-width: 100%; height: auto; margin: 1rem 0; border-radius: 8px;">'
+  );
+
+  // Convert line breaks to <br> for better formatting
+  sanitized = sanitized.replace(/\n/g, '<br>');
+
+  return sanitized;
 }
 
 function showLoading() {
