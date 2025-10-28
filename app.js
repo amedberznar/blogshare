@@ -226,6 +226,7 @@ async function createBlog(title, author, category, content) {
       author: author || currentUser.displayName || 'Anonymous',
       authorId: currentUser.uid,
       authorEmail: currentUser.email,
+      authorPhoto: currentUser.photoURL || '', // Google profile photo
       category: category,
       content: content,
       excerpt: excerpt,
@@ -349,7 +350,10 @@ function displayBlogs(filter = 'all') {
       </div>
       <p class="blog-excerpt">${renderBlogContent(blog.excerpt)}</p>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-        <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          ${blog.authorPhoto ? `<img src="${blog.authorPhoto}" alt="${escapeHtml(blog.author)}" class="author-avatar" onerror="this.style.display='none'">` : ''}
+          <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
+        </div>
         <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #999;">
           <span>👁 ${formatNumber(blog.views)}</span>
           <span>❤ ${formatNumber(blog.likes)}</span>
@@ -386,7 +390,10 @@ function displayTrendingBlogs() {
       </div>
       <p class="blog-excerpt">${renderBlogContent(blog.excerpt)}</p>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-        <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          ${blog.authorPhoto ? `<img src="${blog.authorPhoto}" alt="${escapeHtml(blog.author)}" class="author-avatar" onerror="this.style.display='none'">` : ''}
+          <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
+        </div>
         <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #999;">
           <span>👁 ${formatNumber(blog.views)}</span>
           <span>❤ ${formatNumber(blog.likes)}</span>
@@ -412,7 +419,10 @@ async function openBlogDetails(blogId) {
     <h2>${escapeHtml(blog.title)}</h2>
     <div class="blog-meta">
       <span class="blog-category">${blog.category}</span>
-      <span style="margin: 0 1rem;">By ${escapeHtml(blog.author)}</span>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0 1rem;">
+        ${blog.authorPhoto ? `<img src="${blog.authorPhoto}" alt="${escapeHtml(blog.author)}" class="author-avatar-large" onerror="this.style.display='none'">` : ''}
+        <span>By ${escapeHtml(blog.author)}</span>
+      </div>
       <span class="blog-date">${formatDate(blog.createdAt)}</span>
     </div>
     <div style="display: flex; gap: 2rem; margin: 1rem 0; color: #999; font-size: 0.9rem;">
