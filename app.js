@@ -325,7 +325,7 @@ function displayBlogs(filter = 'all') {
         <span class="blog-category">${blog.category}</span>
         <span class="blog-date">${formatDate(blog.createdAt)}</span>
       </div>
-      <p class="blog-excerpt">${escapeHtml(blog.excerpt)}</p>
+      <p class="blog-excerpt">${renderBlogContent(blog.excerpt)}</p>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
         <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
         <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #999;">
@@ -362,7 +362,7 @@ function displayTrendingBlogs() {
         <span class="blog-category">${blog.category}</span>
         <span class="blog-date">${formatDate(blog.createdAt)}</span>
       </div>
-      <p class="blog-excerpt">${escapeHtml(blog.excerpt)}</p>
+      <p class="blog-excerpt">${renderBlogContent(blog.excerpt)}</p>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
         <span style="color: #999; font-size: 0.9rem;">By ${escapeHtml(blog.author)}</span>
         <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #999;">
