@@ -397,17 +397,17 @@ header {
     line-height: 1.7;
     margin-bottom: 1.5rem;
     flex-grow: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+    max-height: 250px;
     overflow: hidden;
+    position: relative;
 }
 
 .blog-excerpt img {
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-md);
-    margin: 1rem 0;
+    margin: 0.5rem 0;
+    display: block;
 }
 
 .blog-date {
@@ -862,6 +862,20 @@ footer {
         gap: 1.5rem;
     }
 
+    .blog-card {
+        padding: 1.25rem;
+    }
+
+    .blog-excerpt {
+        max-height: 300px;
+    }
+
+    .blog-excerpt img {
+        margin: 0.75rem 0;
+        max-height: 200px;
+        object-fit: cover;
+    }
+
     .modal-content {
         margin: 5% 1rem;
         padding: 1.5rem;
@@ -943,7 +957,15 @@ footer {
     }
 
     .blog-card {
-        padding: 1.25rem;
+        padding: 1rem;
+    }
+
+    .blog-excerpt {
+        max-height: 280px;
+    }
+
+    .blog-excerpt img {
+        max-height: 180px;
     }
 
     .filter-btn {
