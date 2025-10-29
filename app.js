@@ -44,7 +44,7 @@ function updateUIForLoggedInUser(user) {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.textContent = user.displayName || user.email.split('@')[0];
-    loginBtn.onclick = showUserMenu;
+    loginBtn.onclick = openProfile;
   }
 }
 
@@ -753,6 +753,12 @@ function setupEventListeners() {
     };
   }
 
+  // Edit blog form submission
+  const editBlogForm = document.getElementById('editBlogForm');
+  if (editBlogForm) {
+    editBlogForm.onsubmit = saveEditedBlog;
+  }
+
   // Login form - Google sign in
   const googleLoginButtons = document.querySelectorAll('.social-login-btn.google');
   googleLoginButtons.forEach(btn => {
@@ -778,10 +784,14 @@ function setupModalClosing() {
   const modal = document.getElementById('blogModal');
   const readModal = document.getElementById('readModal');
   const loginModal = document.getElementById('loginModal');
+  const profileModal = document.getElementById('profileModal');
+  const editModal = document.getElementById('editModal');
 
   const closeBtn = document.getElementsByClassName('close')[0];
   const closeReadBtn = document.getElementsByClassName('close-read')[0];
   const closeLoginBtn = document.getElementsByClassName('close-login')[0];
+  const closeProfileBtn = document.getElementsByClassName('close-profile')[0];
+  const closeEditBtn = document.getElementsByClassName('close-edit')[0];
 
   if (closeBtn) {
     closeBtn.onclick = function() {
@@ -803,6 +813,19 @@ function setupModalClosing() {
     };
   }
 
+  if (closeProfileBtn) {
+    closeProfileBtn.onclick = function() {
+      profileModal.style.display = 'none';
+    };
+  }
+
+  if (closeEditBtn) {
+    closeEditBtn.onclick = function() {
+      editModal.style.display = 'none';
+      currentEditBlogId = null;
+    };
+  }
+
   // Close when clicking outside
   window.onclick = function(event) {
     if (event.target == modal) {
@@ -814,6 +837,13 @@ function setupModalClosing() {
     }
     if (event.target == loginModal) {
       loginModal.style.display = 'none';
+    }
+    if (event.target == profileModal) {
+      profileModal.style.display = 'none';
+    }
+    if (event.target == editModal) {
+      editModal.style.display = 'none';
+      currentEditBlogId = null;
     }
   };
 }
@@ -871,8 +901,186 @@ function bookmarkBlog() {
   alert('Blog bookmarked! (Feature will be fully implemented in next update)');
 }
 
+// ============================================================================
+// PROFILE PAGE FUNCTIONALITY
+// ============================================================================
+
+let currentEditBlogId = null;
+
+// Open user profile
+async function openProfile() {
+  if (!currentUser) {
+    document.getElementById('loginModal').style.display = 'block';
+    return;
+  }
+
+  try {
+    // Update profile header
+    document.getElementById('profilePhoto').src = currentUser.photoURL || '';
+    document.getElementById('profileName').textContent = currentUser.displayName || 'User';
+    document.getElementById('profileEmail').textContent = currentUser.email;
+
+    // Get user's blogs
+    const userBlogsQuery = query(
+      collection(db, 'blogs'),
+      where('authorId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const querySnapshot = await getDocs(userBlogsQuery);
+    const userBlogs = [];
+
+    querySnapshot.forEach((doc) => {
+      userBlogs.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // Calculate stats
+    const totalViews = userBlogs.reduce((sum, blog) => sum + (blog.views || 0), 0);
+    const totalLikes = userBlogs.reduce((sum, blog) => sum + (blog.likes || 0), 0);
+
+    document.getElementById('userBlogCount').textContent = userBlogs.length;
+    document.getElementById('userTotalViews').textContent = formatNumber(totalViews);
+    document.getElementById('userTotalLikes').textContent = formatNumber(totalLikes);
+
+    // Display user's blogs
+    displayUserBlogs(userBlogs);
+
+    // Show profile modal
+    document.getElementById('profileModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    alert('Error loading profile: ' + error.message);
+  }
+}
+
+// Display user's blogs in profile
+function displayUserBlogs(userBlogs) {
+  const container = document.getElementById('userBlogsContainer');
+
+  if (userBlogs.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">You haven\'t written any blogs yet. <a href="#" onclick="document.getElementById(\'profileModal\').style.display=\'none\'; document.getElementById(\'blogModal\').style.display=\'block\';" style="color: var(--primary-color);">Write your first blog!</a></p>';
+    return;
+  }
+
+  container.innerHTML = userBlogs.map(blog => `
+    <div class="user-blog-item">
+      <div class="user-blog-info">
+        <h4>${escapeHtml(blog.title)}</h4>
+        <p>${escapeHtml(blog.excerpt)}</p>
+        <div class="user-blog-meta">
+          <span class="blog-category">${blog.category}</span>
+          <span>👁 ${formatNumber(blog.views)} views</span>
+          <span>❤ ${formatNumber(blog.likes)} likes</span>
+          <span>${formatDate(blog.createdAt)}</span>
+        </div>
+      </div>
+      <div class="user-blog-actions">
+        <button class="btn-edit" onclick="editBlog('${blog.id}')">Edit</button>
+        <button class="btn-delete" onclick="deleteBlog('${blog.id}', '${escapeHtml(blog.title).replace(/'/g, "\\'")}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Edit blog
+async function editBlog(blogId) {
+  try {
+    const blog = blogs.find(b => b.id === blogId);
+    if (!blog) {
+      alert('Blog not found');
+      return;
+    }
+
+    // Populate edit form
+    document.getElementById('editBlogTitle').value = blog.title;
+    document.getElementById('editBlogCategory').value = blog.category;
+    document.getElementById('editBlogContent').value = blog.content;
+
+    currentEditBlogId = blogId;
+
+    // Show edit modal
+    document.getElementById('editModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error editing blog:', error);
+    alert('Error loading blog for editing: ' + error.message);
+  }
+}
+
+// Save edited blog
+async function saveEditedBlog(e) {
+  e.preventDefault();
+
+  if (!currentEditBlogId) return;
+
+  try {
+    const title = document.getElementById('editBlogTitle').value;
+    const category = document.getElementById('editBlogCategory').value;
+    const content = document.getElementById('editBlogContent').value;
+
+    // Create new excerpt
+    let excerpt = content;
+    if (content.length > 150) {
+      const firstPart = content.substring(0, 150);
+      const imageStartIndex = firstPart.lastIndexOf('![');
+      if (imageStartIndex !== -1) {
+        const imageEndIndex = content.indexOf(')', imageStartIndex);
+        if (imageEndIndex !== -1 && imageEndIndex > 150) {
+          excerpt = content.substring(0, imageEndIndex + 1) + '\n...';
+        } else {
+          excerpt = content.substring(0, 150) + '...';
+        }
+      } else {
+        excerpt = content.substring(0, 150) + '...';
+      }
+    }
+
+    await updateDoc(doc(db, 'blogs', currentEditBlogId), {
+      title: title,
+      category: category,
+      content: content,
+      excerpt: excerpt,
+      updatedAt: serverTimestamp()
+    });
+
+    alert('Blog updated successfully!');
+    document.getElementById('editModal').style.display = 'none';
+
+    // Reload blogs and profile
+    await loadBlogs();
+    await openProfile();
+  } catch (error) {
+    console.error('Error updating blog:', error);
+    alert('Error updating blog: ' + error.message);
+  }
+}
+
+// Delete blog
+async function deleteBlog(blogId, blogTitle) {
+  if (!confirm(`Are you sure you want to delete "${blogTitle}"?\n\nThis action cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, 'blogs', blogId));
+    alert('Blog deleted successfully!');
+
+    // Reload blogs and profile
+    await loadBlogs();
+    await openProfile();
+  } catch (error) {
+    console.error('Error deleting blog:', error);
+    alert('Error deleting blog: ' + error.message);
+  }
+}
+
 // Make functions global for onclick handlers
 window.openBlogDetails = openBlogDetails;
+window.openProfile = openProfile;
+window.editBlog = editBlog;
+window.deleteBlog = deleteBlog;
 window.likeBlog = likeBlog;
 window.shareOnTwitter = shareOnTwitter;
 window.shareOnFacebook = shareOnFacebook;
