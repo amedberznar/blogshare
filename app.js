@@ -20,7 +20,22 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeAuth();
   loadBlogs();
   setupEventListeners();
+  handleHashNavigation();
 });
+
+// Handle hash navigation (for #write from profile page)
+function handleHashNavigation() {
+  const hash = window.location.hash;
+  if (hash === '#write') {
+    setTimeout(() => {
+      if (currentUser) {
+        document.getElementById('blogModal').style.display = 'block';
+      } else {
+        document.getElementById('loginModal').style.display = 'block';
+      }
+    }, 500);
+  }
+}
 
 // ============================================================================
 // TOAST NOTIFICATION SYSTEM
@@ -78,7 +93,7 @@ function updateUIForLoggedInUser(user) {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.textContent = user.displayName || user.email.split('@')[0];
-    loginBtn.onclick = openProfile;
+    loginBtn.onclick = () => window.location.href = 'profile.html';
   }
 }
 
