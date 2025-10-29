@@ -920,11 +920,10 @@ async function openProfile() {
     document.getElementById('profileName').textContent = currentUser.displayName || 'User';
     document.getElementById('profileEmail').textContent = currentUser.email;
 
-    // Get user's blogs
+    // Get user's blogs (without orderBy to avoid index requirement)
     const userBlogsQuery = query(
       collection(db, 'blogs'),
-      where('authorId', '==', currentUser.uid),
-      orderBy('createdAt', 'desc')
+      where('authorId', '==', currentUser.uid)
     );
 
     const querySnapshot = await getDocs(userBlogsQuery);
@@ -935,6 +934,13 @@ async function openProfile() {
         id: doc.id,
         ...doc.data()
       });
+    });
+
+    // Sort by createdAt in JavaScript instead
+    userBlogs.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis() || 0;
+      const bTime = b.createdAt?.toMillis() || 0;
+      return bTime - aTime; // Descending order (newest first)
     });
 
     // Calculate stats
