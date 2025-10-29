@@ -23,6 +23,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================================================
+
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  const icons = {
+    success: '✓',
+    error: '✕',
+    info: 'ℹ'
+  };
+
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || icons.info}</span>
+    <span class="toast-message">${message}</span>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+
+  container.appendChild(toast);
+
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 4000);
+}
+
+// ============================================================================
 // AUTHENTICATION
 // ============================================================================
 
@@ -958,7 +992,7 @@ async function openProfile() {
     document.getElementById('profileModal').style.display = 'block';
   } catch (error) {
     console.error('Error loading profile:', error);
-    alert('Error loading profile: ' + error.message);
+    showToast('Error loading profile: ' + error.message, 'error');
   }
 }
 
@@ -996,7 +1030,7 @@ async function editBlog(blogId) {
   try {
     const blog = blogs.find(b => b.id === blogId);
     if (!blog) {
-      alert('Blog not found');
+      showToast('Blog not found', 'error');
       return;
     }
 
@@ -1011,7 +1045,7 @@ async function editBlog(blogId) {
     document.getElementById('editModal').style.display = 'block';
   } catch (error) {
     console.error('Error editing blog:', error);
-    alert('Error loading blog for editing: ' + error.message);
+    showToast('Error loading blog for editing: ' + error.message, 'error');
   }
 }
 
@@ -1051,7 +1085,7 @@ async function saveEditedBlog(e) {
       updatedAt: serverTimestamp()
     });
 
-    alert('Blog updated successfully!');
+    showToast('Blog updated successfully!', 'success');
     document.getElementById('editModal').style.display = 'none';
 
     // Reload blogs and profile
@@ -1059,7 +1093,7 @@ async function saveEditedBlog(e) {
     await openProfile();
   } catch (error) {
     console.error('Error updating blog:', error);
-    alert('Error updating blog: ' + error.message);
+    showToast('Error updating blog: ' + error.message, 'error');
   }
 }
 
@@ -1071,14 +1105,14 @@ async function deleteBlog(blogId, blogTitle) {
 
   try {
     await deleteDoc(doc(db, 'blogs', blogId));
-    alert('Blog deleted successfully!');
+    showToast('Blog deleted successfully!', 'success');
 
     // Reload blogs and profile
     await loadBlogs();
     await openProfile();
   } catch (error) {
     console.error('Error deleting blog:', error);
-    alert('Error deleting blog: ' + error.message);
+    showToast('Error deleting blog: ' + error.message, 'error');
   }
 }
 
