@@ -827,6 +827,67 @@ function setupEventListeners() {
       }
     });
   });
+
+  // Bottom navigation setup
+  setupBottomNavigation();
+}
+
+// ============================================================================
+// BOTTOM NAVIGATION
+// ============================================================================
+
+function setupBottomNavigation() {
+  // Bottom write button
+  const bottomWriteBtn = document.getElementById('bottomWriteBtn');
+  if (bottomWriteBtn) {
+    bottomWriteBtn.onclick = function() {
+      if (!currentUser) {
+        showToast('Please sign in to write a blog', 'info');
+        document.getElementById('loginModal').style.display = 'block';
+        return;
+      }
+      document.getElementById('blogModal').style.display = 'block';
+    };
+  }
+
+  // Bottom profile button
+  const bottomProfileBtn = document.getElementById('bottomProfileBtn');
+  if (bottomProfileBtn) {
+    bottomProfileBtn.onclick = function() {
+      if (!currentUser) {
+        showToast('Please sign in to view your profile', 'info');
+        document.getElementById('loginModal').style.display = 'block';
+        return;
+      }
+      window.location.href = 'profile.html';
+    };
+  }
+
+  // Update active state on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const bottomNavItems = document.querySelectorAll('.bottom-nav-item[data-nav]');
+
+  function updateActiveNav() {
+    let currentSection = '';
+
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.clientHeight;
+      if (window.pageYOffset >= sectionTop - 200) {
+        currentSection = section.getAttribute('id');
+      }
+    });
+
+    bottomNavItems.forEach(item => {
+      item.classList.remove('active');
+      if (item.getAttribute('data-nav') === currentSection) {
+        item.classList.add('active');
+      }
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveNav);
+  updateActiveNav(); // Initial call
 }
 
 function setupModalClosing() {
